@@ -9,7 +9,7 @@
 //!   (`UI_DEV_DESTROY`) when dropped.
 //!
 //! ```no_run
-//! use rin::device::InputDevice;
+//! use rin::devices::InputDevice;
 //! use rin::input_event_codes::Key;
 //!
 //! # fn main() -> std::io::Result<()> {
