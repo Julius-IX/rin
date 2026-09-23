@@ -7,16 +7,20 @@ use std::{
   os::unix::io::AsRawFd,
 };
 
-use super::raw::{ioctl_none, ioctl_val, ioctl_write};
-use super::{InputDevice, Kind};
-use crate::input::{Bus, InputAbsinfo, InputId};
-use crate::input_event_codes::{
-  AbsoluteAxis, EventTypes, InputProp, Key, Led, Misc, RelativeAxis, Sound, SwitchEvent,
+use super::{
+  InputDevice, Kind,
+  raw::{ioctl_none, ioctl_val, ioctl_write},
 };
-use crate::uinput::{
-  UI_ABS_SETUP, UI_DEV_CREATE, UI_DEV_SETUP, UI_SET_ABSBIT, UI_SET_EVBIT, UI_SET_FFBIT,
-  UI_SET_KEYBIT, UI_SET_LEDBIT, UI_SET_MSCBIT, UI_SET_PROPBIT, UI_SET_RELBIT, UI_SET_SNDBIT,
-  UI_SET_SWBIT, UinputAbsSetup, UinputSetup,
+use crate::{
+  input::{Bus, InputAbsinfo, InputId},
+  input_event_codes::{
+    AbsoluteAxis, EventTypes, InputProp, Key, Led, Misc, RelativeAxis, Sound, SwitchEvent,
+  },
+  uinput::{
+    UI_ABS_SETUP, UI_DEV_CREATE, UI_DEV_SETUP, UI_SET_ABSBIT, UI_SET_EVBIT, UI_SET_FFBIT,
+    UI_SET_KEYBIT, UI_SET_LEDBIT, UI_SET_MSCBIT, UI_SET_PROPBIT, UI_SET_RELBIT, UI_SET_SNDBIT,
+    UI_SET_SWBIT, UinputAbsSetup, UinputSetup,
+  },
 };
 
 /// Builds a virtual device to be created through `/dev/uinput`.

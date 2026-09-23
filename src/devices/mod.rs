@@ -30,21 +30,26 @@ mod raw;
 pub use builder::DeviceBuilder;
 pub use info::DeviceInfo;
 
-use std::fs::OpenOptions;
-use std::io::{self, Write};
-use std::os::unix::fs::OpenOptionsExt;
-use std::os::unix::io::{AsRawFd, RawFd};
-use std::path::Path;
-use std::{mem, slice};
+use std::{
+  fs::OpenOptions,
+  io::{self, Write},
+  mem,
+  os::unix::fs::OpenOptionsExt,
+  os::unix::io::{AsRawFd, RawFd},
+  path::Path,
+  slice,
+};
 
 use raw::{ioctl_none, ioctl_read, ioctl_read_buf, ioctl_val};
 
-use crate::input::ioctls::{EVIOCGID, EVIOCGRAB, eviocgabs, eviocgbit, eviocgname, eviocgprop};
-use crate::input::{InputAbsinfo, InputEvent, InputId};
-use crate::input_event_codes::{
-  AbsoluteAxis, EventTypes, InputProp, Key, Led, Misc, RelativeAxis, Sound, SwitchEvent, Syn,
+use crate::{
+  input::ioctls::{EVIOCGID, EVIOCGRAB, eviocgabs, eviocgbit, eviocgname, eviocgprop},
+  input::{InputAbsinfo, InputEvent, InputId},
+  input_event_codes::{
+    AbsoluteAxis, EventTypes, InputProp, Key, Led, Misc, RelativeAxis, Sound, SwitchEvent, Syn,
+  },
+  uinput::UI_DEV_DESTROY,
 };
-use crate::uinput::UI_DEV_DESTROY;
 
 /// The state of a key or button, for [`InputDevice::send_key`].
 ///

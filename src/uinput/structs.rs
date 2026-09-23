@@ -1,5 +1,4 @@
-use std::mem::zeroed;
-use std::os::raw::c_char;
+use std::{mem::zeroed, os::raw::c_char};
 
 use super::{ABS_CNT, UINPUT_MAX_NAME_SIZE};
 use crate::input::{FfEffect, InputAbsinfo, InputId};
@@ -10,7 +9,11 @@ use crate::input::{FfEffect, InputAbsinfo, InputId};
 /// Not part of the C header; a convenience for filling in `name` fields.
 pub fn copy_name(dst: &mut [c_char; UINPUT_MAX_NAME_SIZE], name: &str) {
   dst.fill(0);
-  for (d, s) in dst.iter_mut().take(UINPUT_MAX_NAME_SIZE - 1).zip(name.bytes()) {
+  for (d, s) in dst
+    .iter_mut()
+    .take(UINPUT_MAX_NAME_SIZE - 1)
+    .zip(name.bytes())
+  {
     *d = s as c_char;
   }
 }

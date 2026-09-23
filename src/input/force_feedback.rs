@@ -4,8 +4,7 @@
 //! All duration values are expressed in ms. Values above 32767 ms (0x7fff)
 //! should not be used and have unspecified results.
 
-use std::fmt;
-use std::mem::zeroed;
+use std::{fmt, mem::zeroed};
 
 /// `struct ff_replay` - defines scheduling of the force-feedback effect
 #[repr(C)]
