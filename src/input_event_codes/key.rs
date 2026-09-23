@@ -1,3 +1,5 @@
+use strum_macros::EnumIter;
+
 /// Keys and buttons
 ///
 /// Most of the keys/buttons are modeled after USB HUT 1.12
@@ -6,7 +8,7 @@
 /// AC - Application Control
 /// AL - Application Launch Button
 /// SC - System Control
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(EnumIter, Debug, PartialEq, Clone, Copy)]
 pub enum Key {
   Reserved,
   Esc,
