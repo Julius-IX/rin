@@ -108,6 +108,21 @@ impl Cli {
   /// `events` needs, sends them in order with the requested state, then
   /// tears the device back down.
   pub fn send(&self) -> io::Result<()> {
+
+    match perm::checks::has_uinput_access() {
+      Ok(res) => {
+        if !res {
+          return Err(io::Error::new(
+            io::ErrorKind::PermissionDenied,
+            "uinput access not granted, for more information run `rin perm -h`",
+          ));
+        }
+      },
+      Err(e) => {
+        return Err(io::Error::new(io::ErrorKind::PermissionDenied, e));
+      }
+    }
+
     let specs = self
       .parse_events()
       .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;

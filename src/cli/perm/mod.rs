@@ -2,7 +2,7 @@ use std::io;
 
 use clap::{Args, CommandFactory, Parser, Subcommand};
 
-mod checks;
+pub mod checks;
 
 #[derive(Subcommand)]
 pub enum Perm {
