@@ -1,8 +1,8 @@
 use std::io;
 
-use clap::{Args, CommandFactory, Parser, Subcommand};
+use clap::{Args, CommandFactory, Subcommand};
 
-pub mod checks;
+use super::checks;
 
 #[derive(Subcommand)]
 pub enum Perm {
