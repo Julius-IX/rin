@@ -25,6 +25,10 @@ pub struct Cli {
   #[clap(short, long)]
   pub list: bool,
 
+  /// Interval between events, in seconds.
+  #[clap(long, short, default_value = "0")]
+  pub interval: f32,
+
   #[clap(subcommand)]
   pub perm: Option<perm::Perm>,
 }
@@ -108,7 +112,6 @@ impl Cli {
   /// `events` needs, sends them in order with the requested state, then
   /// tears the device back down.
   pub fn send(&self) -> io::Result<()> {
-
     match perm::checks::has_uinput_access() {
       Ok(res) => {
         if !res {
@@ -142,7 +145,11 @@ impl Cli {
     // after creating it can be dropped on the floor.
     thread::sleep(Duration::from_millis(200));
 
-    for spec in specs {
+    let sleep_duration = Duration::from_millis((self.interval * 1000.0) as u64);
+    for (i, spec) in specs.into_iter().enumerate() {
+      if i > 0 {
+        std::thread::sleep(sleep_duration);
+      }
       match spec.value {
         Some(value) => device.send_event(EventTypes::Key, spec.key.code(), value)?,
         None => device.press_key(spec.key)?,
