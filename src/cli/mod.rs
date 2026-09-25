@@ -9,6 +9,7 @@ use crate::{
 };
 
 pub mod perm;
+pub mod checks;
 
 #[derive(Parser)]
 pub struct Cli {
@@ -20,6 +21,11 @@ pub struct Cli {
   /// - linux kernel input event code names
   #[arg(verbatim_doc_comment)]
   pub events: Vec<String>,
+
+  /// Type out a literal string as keypresses (US QWERTY layout).
+  /// Combines with `events`: `--type` is sent first.
+  #[clap(long = "type")]
+  pub type_str: Option<String>,
 
   /// List all event names
   #[clap(short, long)]
@@ -80,7 +86,7 @@ pub fn run() -> ExitCode {
     };
   }
 
-  if cli.events.is_empty() {
+  if cli.events.is_empty() && cli.type_str.is_none() {
     Cli::command().print_help().unwrap();
     return ExitCode::FAILURE;
   }
@@ -108,11 +114,23 @@ impl Cli {
       .collect()
   }
 
+  fn parse_type_str(&self) -> Result<Vec<(Key, bool)>, String> {
+    match &self.type_str {
+      Some(s) => s
+        .chars()
+        .map(|c| {
+          Key::from_char(c).ok_or_else(|| format!("'{c}': no key mapping for this character"))
+        })
+        .collect(),
+      None => Ok(Vec::new()),
+    }
+  }
+
   /// Opens a temporary virtual keyboard advertising exactly the keys
-  /// `events` needs, sends them in order with the requested state, then
-  /// tears the device back down.
+  /// `events`/`--type` need, sends them in order, then tears the
+  /// device back down.
   pub fn send(&self) -> io::Result<()> {
-    match perm::checks::has_uinput_access() {
+    match checks::has_uinput_access() {
       Ok(res) => {
         if !res {
           return Err(io::Error::new(
@@ -120,7 +138,7 @@ impl Cli {
             "uinput access not granted, for more information run `rin perm -h`",
           ));
         }
-      },
+      }
       Err(e) => {
         return Err(io::Error::new(io::ErrorKind::PermissionDenied, e));
       }
@@ -129,14 +147,23 @@ impl Cli {
     let specs = self
       .parse_events()
       .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
+    let type_keys = self
+      .parse_type_str()
+      .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
 
-    if specs.is_empty() {
+    if specs.is_empty() && type_keys.is_empty() {
       return Ok(());
     }
 
     let mut builder = InputDevice::builder("rin");
     for spec in &specs {
       builder = builder.key(spec.key);
+    }
+    if type_keys.iter().any(|(_, shift)| *shift) {
+      builder = builder.key(Key::Leftshift);
+    }
+    for (key, _) in &type_keys {
+      builder = builder.key(*key);
     }
     let mut device = builder.build()?;
 
@@ -146,10 +173,31 @@ impl Cli {
     thread::sleep(Duration::from_millis(200));
 
     let sleep_duration = Duration::from_millis((self.interval * 1000.0) as u64);
-    for (i, spec) in specs.into_iter().enumerate() {
-      if i > 0 {
-        std::thread::sleep(sleep_duration);
+    let mut first = true;
+
+    // --type is sent first, character by character.
+    for (key, needs_shift) in type_keys {
+      if !first {
+        thread::sleep(sleep_duration);
       }
+      first = false;
+
+      if needs_shift {
+        device.send_event(EventTypes::Key, Key::Leftshift.code(), 1)?;
+      }
+      device.press_key(key)?;
+      if needs_shift {
+        device.send_event(EventTypes::Key, Key::Leftshift.code(), 0)?;
+      }
+    }
+
+    // then any explicit positional events.
+    for spec in specs {
+      if !first {
+        thread::sleep(sleep_duration);
+      }
+      first = false;
+
       match spec.value {
         Some(value) => device.send_event(EventTypes::Key, spec.key.code(), value)?,
         None => device.press_key(spec.key)?,
