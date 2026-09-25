@@ -70,9 +70,7 @@ pub fn run() -> ExitCode {
   let cli = Cli::parse();
 
   if cli.list {
-    for event in Key::iter() {
-      println!("{}", event.name());
-    }
+    print_list();
     return ExitCode::SUCCESS;
   }
 
@@ -98,6 +96,72 @@ pub fn run() -> ExitCode {
       ExitCode::FAILURE
     }
   }
+}
+
+/// Prints every recognized key name for `--list`.
+///
+/// When stdout is a terminal, names are sorted and laid out in aligned,
+/// `ls`-style columns sized to fit the terminal width. When stdout isn't a
+/// terminal (piped to a file or another program), falls back to one name
+/// per line so the output stays easy to parse.
+fn print_list() {
+  let mut names: Vec<&'static str> = Key::iter().map(|key| key.name()).collect();
+  names.sort_unstable();
+
+  if !stdout_is_tty() {
+    for name in names {
+      println!("{name}");
+    }
+    return;
+  }
+
+  print_columns(&names, terminal_width());
+}
+
+/// Lays `items` out column-major (down each column, then across), the way
+/// `ls` does, using as many columns as fit in `width` with two spaces of
+/// padding between them.
+fn print_columns(items: &[&str], width: usize) {
+  if items.is_empty() {
+    return;
+  }
+
+  const PADDING: usize = 2;
+  let max_len = items.iter().map(|s| s.len()).max().unwrap_or(0);
+  let col_width = max_len + PADDING;
+  let num_cols = (width / col_width).max(1);
+  let num_rows = items.len().div_ceil(num_cols);
+
+  for row in 0..num_rows {
+    let mut line = String::new();
+    for col in 0..num_cols {
+      let Some(item) = items.get(col * num_rows + row) else {
+        break;
+      };
+      if col + 1 == num_cols {
+        line.push_str(item);
+      } else {
+        line.push_str(&format!("{item:<col_width$}"));
+      }
+    }
+    println!("{}", line.trim_end());
+  }
+}
+
+/// The current terminal width in columns, falling back to 80 if it can't
+/// be determined (e.g. stdout isn't a terminal).
+fn terminal_width() -> usize {
+  unsafe {
+    let mut size: libc::winsize = std::mem::zeroed();
+    if libc::ioctl(libc::STDOUT_FILENO, libc::TIOCGWINSZ, &mut size) == 0 && size.ws_col > 0 {
+      return size.ws_col as usize;
+    }
+  }
+  80
+}
+
+fn stdout_is_tty() -> bool {
+  unsafe { libc::isatty(libc::STDOUT_FILENO) != 0 }
 }
 
 impl Cli {
